@@ -106,21 +106,22 @@ Each command is in its own file, grouped by function:
 // Example command structure
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('command-name')
-    .setDescription('Command description'),
-  
+    .setName("command-name")
+    .setDescription("Command description"),
+
   // Optional cooldown in seconds
   cooldown: 5,
-  
+
   async execute(interaction) {
     // Command logic here
-  }
+  },
 };
 ```
 
 ## Adding New Commands
 
 1. Create a new file in the appropriate directory:
+
    - Public commands: `src/commands/public/<category>/<command-name>.js`
    - Private commands: `src/commands/private/<category>/<command-name>.js`
 
@@ -142,7 +143,7 @@ module.exports = {
   once: false, // true if the event should only be handled once
   async execute(...args) {
     // Event handling logic
-  }
+  },
 };
 ```
 
@@ -178,4 +179,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-Made with ❤️ by [Your Name]
+Made with ❤️ by Elbartt
