@@ -33,10 +33,21 @@ const config = {
         fileOutput: process.env.LOG_TO_FILE !== 'false',
     },
 
-    // Database (for future implementation)
+    // Database configuration
     database: {
-        url: process.env.DATABASE_URL,
         enabled: process.env.DATABASE_ENABLED === 'true',
+        type: process.env.DATABASE_TYPE || 'json', // 'json' or 'mysql'
+        // JSON database settings
+        jsonPath: process.env.JSON_DB_PATH || './data',
+        // MySQL/MariaDB settings
+        mysql: {
+            host: process.env.MYSQL_HOST || 'localhost',
+            port: parseInt(process.env.MYSQL_PORT || '3306', 10),
+            user: process.env.MYSQL_USER || 'root',
+            password: process.env.MYSQL_PASSWORD || '',
+            database: process.env.MYSQL_DATABASE || 'discord_bot',
+            connectionLimit: parseInt(process.env.MYSQL_CONNECTION_LIMIT || '10', 10),
+        },
     },
 
     // API (for future implementation)

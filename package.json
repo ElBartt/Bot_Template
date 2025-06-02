@@ -28,6 +28,7 @@
     "discord.js": "^14.13.0",
     "dotenv": "^16.3.1",
     "module-alias": "^2.2.3",
+    "mysql2": "^3.14.1",
     "winston": "^3.11.0"
   },
   "devDependencies": {
