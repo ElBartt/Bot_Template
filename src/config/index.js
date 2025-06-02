@@ -39,23 +39,14 @@ const config = {
         enabled: process.env.DATABASE_ENABLED === 'true',
     },
 
-    // Redis (for future implementation)
-    redis: {
-        url: process.env.REDIS_URL,
-        enabled: process.env.REDIS_ENABLED === 'true',
-    },
-
     // API (for future implementation)
     api: {
         enabled: process.env.API_ENABLED === 'true',
-        port: parseInt(process.env.API_PORT || '3000', 10),
-        corsOrigins: (process.env.API_CORS_ORIGINS || '*').split(','),
     },
 
     // Application-specific settings
     app: {
         cooldownDefault: parseInt(process.env.COOLDOWN_DEFAULT || '3', 10),
-        maxCommandsPerUser: parseInt(process.env.MAX_COMMANDS_PER_USER || '100', 10),
         // Add any application-specific settings here
     }
 };
