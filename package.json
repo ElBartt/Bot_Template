@@ -4,14 +4,16 @@
   "description": "A robust Discord bot template with modern architecture and best practices",
   "main": "src/app.js",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "deploy": "node src/scripts/deploy-commands.js",
-    "deploy:global": "node src/scripts/deploy-commands.js --global",
-    "deploy:dev": "node src/scripts/deploy-commands.js --dev",
+    "start:dev": "cross-env NODE_ENV=development node src/app.js",
+    "start:prod": "cross-env NODE_ENV=production node src/app.js",
+    "deploy:commands:dev": "cross-env NODE_ENV=development node src/scripts/deploy-commands.js",
+    "deploy:commands:prod": "cross-env NODE_ENV=production node src/scripts/deploy-commands.js",
     "lint": "eslint . --ext .js",
     "lint:fix": "eslint . --ext .js --fix",
-    "test": "jest"
+    "test": "cross-env NODE_ENV=development jest",
+    "test:watch": "cross-env NODE_ENV=development jest --watch",
+    "test:coverage": "cross-env NODE_ENV=development jest --coverage",
+    "validate": "npm-run-all --parallel lint test"
   },
   "keywords": [
     "discord",
@@ -29,12 +31,14 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "eslint": "^8.56.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-security": "^3.0.1",
     "jest": "^29.7.0",
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "npm-run-all": "^4.1.5"
   },
   "engines": {
     "node": ">=18.0.0"
