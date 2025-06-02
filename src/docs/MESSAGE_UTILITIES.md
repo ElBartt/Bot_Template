@@ -183,3 +183,12 @@ await safeReply(interaction, { embeds: [warningEmbed], ephemeral: true });
 - **DRY Principle**: Eliminates duplicate embed creation code
 - **Maintainability**: Future styling changes only need to be made in `messageUtils.js`
 - **Error Resilience**: Built-in error handling with the `safeReply` utility
+
+---
+
+For more detailed information, refer to:
+
+- [Discord.js Documentation](https://discord.js.org/)
+- [Creating Commands](./CREATING_COMMANDS.md)
+- [Permission Utilities](./DATABASE.md)
+- Project config files for environment-specific settings

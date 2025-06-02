@@ -5,8 +5,8 @@
  * and recent incidents from the Discord Status API
  */
 
-const { SlashCommandBuilder } = require('discord.js');
-const { PERMISSIONS, COLORS, DISCORD } = require('../../../utils/constants');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { COLORS, DISCORD } = require('../../../utils/constants');
 const { createEmbed } = require('../../../utils/messageUtils');
 const { sendPaginatedMessage } = require('../../../utils/paginationUtils');
 const { logger } = require('../../../utils/logger');
@@ -46,8 +46,13 @@ module.exports = {
         }),
 
     // Command permissions
-    permissions: PERMISSIONS.ADMIN,
-    category: 'Admin',
+    requiredPermissions: [PermissionFlagsBits.Administrator],
+
+    // Bot permissions needed to execute this command
+    botRequiredPermissions: [
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.EmbedLinks,
+    ],
 
     /**
      * Command execution

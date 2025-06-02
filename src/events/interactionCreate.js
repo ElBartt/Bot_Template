@@ -89,7 +89,9 @@ async function checkUserPermissions(interaction, command) {
         {
             footerText: 'Please contact a server administrator if you believe this is an error.'
         }
-    ); // Add the missing permissions as a field
+    );
+
+    // Add the missing permissions as a field
     permissionEmbed.addFields({
         name: 'Required Permissions',
         value: `• ${formattedPerms}`

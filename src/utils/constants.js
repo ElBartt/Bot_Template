@@ -43,14 +43,6 @@ const TIME = {
     WEEK: MILLISECONDS_PER_WEEK,
 };
 
-// Command permissions and access levels
-const PERMISSIONS = {
-    USER: 0,
-    MODERATOR: 1,
-    ADMIN: 2,
-    OWNER: 3,
-};
-
 // Custom embed colors for consistency
 const COLORS = {
     // Discord standard colors
@@ -125,7 +117,6 @@ module.exports = {
     BASE,
     COMMANDS,
     TIME,
-    PERMISSIONS,
     COLORS,
     MEMORY,
     PAGINATION,

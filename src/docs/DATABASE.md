@@ -177,3 +177,12 @@ Note: The MySQL implementation is currently a placeholder. Stick to the JSON imp
    - Extend the MySQL implementation as needed
    - Consider adding data migration tools when implementing MySQL
    - Maintain backward compatibility when adding features
+
+---
+
+For more detailed information, refer to:
+
+- [Discord.js Documentation](https://discord.js.org/)
+- [Message Utilities](./MESSAGE_UTILITIES.md)
+- [Creating Commands](./CREATING_COMMANDS.md)
+- Project config files for environment-specific settings
