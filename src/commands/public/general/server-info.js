@@ -5,7 +5,8 @@
  */
 
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { createSuccessEmbed, createPaginatedEmbed, safeReply, createEphemeralReplyOptions } = require('../../../utils/messageUtils');
+const { createSuccessEmbed, safeReply, createEphemeralReplyOptions, createPaginatedEmbed } = require('../../../utils/messageUtils');
+const { sendPaginatedMessage } = require('../../../utils/paginationUtils');
 const { config } = require('../../../config');
 const { logger } = require('../../../utils/logger');
 const { BASE, TIME, DISCORD, PAGINATION } = require('../../../utils/constants');
@@ -99,16 +100,24 @@ module.exports = {
 
         if (members.length === 0) {
             return Promise.resolve();
-        }
-
-        // Create paginated member list
-        const pagination = this.createMemberPagination(members, guild.name);
-
-        // Send first page of member list as a follow-up message
-        const paginatedMessage = await interaction.followUp(pagination.getPage(0));
-
-        // Setup pagination controls
-        await this.setupPaginationCollector(interaction, paginatedMessage, pagination);
+        } // Send paginated member list using the new utility
+        await sendPaginatedMessage(
+            interaction,
+            members,
+            (member) => {
+                return {
+                    name: member.user.tag,
+                    value: `Joined: <t:${Math.floor(member.joinedTimestamp / BASE.MILLISECONDS_PER_SECOND)}:R>\nRoles: ${member.roles.cache.size - 1}`
+                };
+            },
+            {
+                title: `Members of ${guild.name}`,
+                description: `Showing ${members.length} members`,
+                itemsPerPage: PAGINATION.ITEMS_PER_PAGE,
+                footerText: 'Member List',
+                color: 'BLUE'
+            }
+        );
         return Promise.resolve();
     },
 

@@ -114,6 +114,13 @@ const DISCORD = {
     }
 };
 
+// Discord API error codes
+const API_ERRORS = {
+    UNKNOWN_INTERACTION: 10062,
+    INTERACTION_TIMEOUT: 10062, // Same as UNKNOWN_INTERACTION
+    ALREADY_ACKNOWLEDGED: 'Interaction has already been acknowledged',
+};
+
 module.exports = {
     BASE,
     COMMANDS,
@@ -123,4 +130,5 @@ module.exports = {
     MEMORY,
     PAGINATION,
     DISCORD,
+    API_ERRORS,
 };

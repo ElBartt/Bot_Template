@@ -9,18 +9,16 @@ const {
     createSuccessEmbed,
     createErrorEmbed,
     safeReply,
-    createPaginatedEmbed,
     createEphemeralReplyOptions
 } = require('../../../utils/messageUtils');
+const { sendPaginatedMessage } = require('../../../utils/paginationUtils');
 const { config } = require('../../../config');
 const { formatPermissionList } = require('../../../utils/permissionUtil');
 const { logger } = require('../../../utils/logger');
-const { TIME } = require('../../../utils/constants');
+const { PAGINATION } = require('../../../utils/constants');
 
 // Constants
 const MAX_AUTOCOMPLETE_RESULTS = 25;
-const COMMANDS_PER_PAGE = 10;
-const PAGINATION_TIMEOUT_MINUTES = 5;
 
 /**
  * Gets a formatted list of permissions from a command permission property
@@ -149,12 +147,14 @@ function gatherAvailableCommands(client, isInDevServer) {
 }
 
 /**
- * Creates a pagination embed for command list
+ * Sends a paginated embed with command list
+ * @param {import('discord.js').ChatInputCommandInteraction} interaction - Discord interaction
  * @param {Array} commands - Array of command objects
- * @returns {Object} Pagination embed controller object
+ * @returns {Promise<void>}
  */
-function createCommandsPaginationEmbed(commands) {
-    return createPaginatedEmbed(
+async function sendCommandsPaginationEmbed(interaction, commands) {
+    await sendPaginatedMessage(
+        interaction,
         commands,
         (command) => {
             return {
@@ -165,65 +165,14 @@ function createCommandsPaginationEmbed(commands) {
         {
             title: 'Available Commands',
             description: 'Here are all the commands you can use with this bot:',
-            itemsPerPage: COMMANDS_PER_PAGE,
+            itemsPerPage: PAGINATION.ITEMS_PER_PAGE,
             footerText: 'Use /help [command] to get more information'
         }
     );
 }
 
-/**
- * Sets up pagination interaction for command list
- * @param {Object} response - Message response object
- * @param {Object} pagination - Pagination controller object
- * @param {string} userId - ID of the user who triggered the command
- * @returns {void}
- */
-function setupPaginationCollector(response, pagination, userId) {
-    const filter = i => {
-        return i.user.id === userId && ['first', 'prev', 'next', 'last'].includes(i.customId);
-    };
-
-    const collector = response.createMessageComponentCollector({
-        filter,
-        time: PAGINATION_TIMEOUT_MINUTES * TIME.MINUTE
-    });
-
-    let currentPage = 0;
-
-    collector.on('collect', async i => {
-        try {
-            // Update current page based on button press
-            switch (i.customId) {
-                case 'first':
-                    currentPage = 0;
-                    break;
-                case 'prev':
-                    currentPage = Math.max(0, currentPage - 1);
-                    break;
-                case 'next':
-                    currentPage = Math.min(pagination.pageCount - 1, currentPage + 1);
-                    break;
-                case 'last':
-                    currentPage = pagination.pageCount - 1;
-                    break;
-            }
-
-            // Update the message with the new page
-            await i.update(pagination.getPage(currentPage));
-        } catch (error) {
-            logger.error('Error handling pagination:', error);
-        }
-    });
-
-    collector.on('end', () => {
-        // Remove buttons when collector expires
-        try {
-            response.edit({ components: [] }).catch(() => {});
-        } catch (error) {
-            // Ignore errors if message is deleted
-        }
-    });
-}
+// setupPaginationCollector function removed as it's no longer needed
+// Our new sendPaginatedMessage function from paginationUtils.js handles this functionality
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -312,16 +261,8 @@ async function showAllCommands(interaction) {
         // Get available commands
         const commands = gatherAvailableCommands(client, isInDevServer);
 
-        // Create pagination embed
-        const pagination = createCommandsPaginationEmbed(commands);
-
-        // Send the first page
-        const response = await safeReply(interaction, pagination.getPage(0));
-
-        // Setup collector for pagination buttons if response was successful
-        if (response) {
-            setupPaginationCollector(response, pagination, interaction.user.id);
-        }
+        // Send paginated commands using the new utility
+        await sendCommandsPaginationEmbed(interaction, commands);
     } catch (error) {
         logger.error('Error showing all commands:', error);
         await safeReply(interaction, createEphemeralReplyOptions({

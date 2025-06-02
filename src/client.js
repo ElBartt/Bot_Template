@@ -37,6 +37,7 @@ const client = new Client({
 // Initialize collections to store commands and cooldowns
 client.commands = new Collection();
 client.cooldowns = new Collection();
+client.paginators = new Collection(); // Store pagination data
 
 // Store configuration in the client for global access
 client.config = config;

@@ -13,12 +13,13 @@ const {
 } = require('discord.js');
 const { logger } = require('./logger');
 const { truncate } = require('./helpers');
-const { DISCORD, COLORS } = require('./constants');
+const { DISCORD, COLORS, PAGINATION, BASE } = require('./constants');
 const { config } = require('../config');
 
 // Constants for commonly used values
-const DEFAULT_ITEMS_PER_PAGE = 5;
 const DEFAULT_TIMER_DURATION = 10000; // 10 seconds
+// Using 30 minutes for paginator expiration, different from PAGINATION.TIMEOUT_MINUTES (5)
+const PAGINATOR_TIMEOUT_MINUTES = 10;
 
 /**
  * Creates a basic embed with consistent styling
@@ -283,6 +284,7 @@ function _createPaginationButtons(currentPage, pageCount) {
         // First page
         createButton({
             customId: 'first',
+            label: 'First',
             emoji: '⏮️',
             disabled: isFirstPage,
             style: ButtonStyle.Secondary
@@ -290,6 +292,7 @@ function _createPaginationButtons(currentPage, pageCount) {
         // Previous page
         createButton({
             customId: 'prev',
+            label: 'Previous',
             emoji: '◀️',
             disabled: isFirstPage,
             style: ButtonStyle.Primary
@@ -304,6 +307,7 @@ function _createPaginationButtons(currentPage, pageCount) {
         // Next page
         createButton({
             customId: 'next',
+            label: 'Next',
             emoji: '▶️',
             disabled: isLastPage,
             style: ButtonStyle.Primary
@@ -311,6 +315,7 @@ function _createPaginationButtons(currentPage, pageCount) {
         // Last page
         createButton({
             customId: 'last',
+            label: 'Last',
             emoji: '⏭️',
             disabled: isLastPage,
             style: ButtonStyle.Secondary
@@ -319,62 +324,125 @@ function _createPaginationButtons(currentPage, pageCount) {
 }
 
 /**
- * Creates a paginated embed message for displaying arrays of data
- * @param {Array<Object>} items - Array of items to paginate
- * @param {Function} formatItemFn - Function that formats each item for display
- * @param {Object} options - Pagination options
- * @param {string} options.title - Title for the embed
- * @param {string} options.description - Description for the embed
- * @param {number} options.itemsPerPage - Number of items per page (default: 5)
- * @param {string} options.footerText - Text for the footer
- * @param {string} options.color - Color for the embed
- * @returns {Object} Object with functions for creating paginated embeds and components
+ * Creates embed page for pagination
+ * @param {Object} params - Parameters object
+ * @param {Array} params.items - All items
+ * @param {Function} params.formatItemFn - Function to format each item
+ * @param {Object} params.options - Pagination options
+ * @param {number} params.page - Page number (0-indexed)
+ * @param {number} params.itemsPerPage - Items per page
+ * @param {number} params.pageCount - Total number of pages
+ * @returns {Object} Object with embed and components
+ */
+function _createPaginationPage({ items, formatItemFn, options, page, itemsPerPage, pageCount }) {
+    // Ensure page is within bounds
+    const currentPage = Math.max(0, Math.min(page, pageCount - 1));
+    const startIdx = currentPage * itemsPerPage;
+    const endIdx = Math.min(startIdx + itemsPerPage, items.length);
+    const pageItems = items.slice(startIdx, endIdx);
+
+    // Create the embed
+    const embed = createEmbed({
+        title: options.title || 'Results',
+        description: options.description || `Showing ${startIdx + 1}-${endIdx} of ${items.length} items`,
+        color: options.color || COLORS.PRIMARY,
+        footerText: `${options.footerText || 'Page'} ${currentPage + 1}/${pageCount}`
+    });
+
+    // Add formatted items
+    for (const item of pageItems) {
+        const formatted = formatItemFn(item);
+        if (formatted.name && formatted.value) {
+            embed.addFields({ name: formatted.name, value: formatted.value });
+        }
+    }
+
+    // Create navigation buttons
+    const buttons = _createPaginationButtons(currentPage, pageCount);
+
+    return {
+        embeds: [embed],
+        components: [createButtonRow(buttons)],
+        currentPage
+    };
+}
+
+/**
+ * Register a paginator with the client for later use
+ * @param {Object} params - Parameters object
+ * @param {Object} params.client - Discord client
+ * @param {string} params.messageId - ID of the message with the paginator
+ * @param {Function} params.getPage - Function to get a specific page
+ * @param {number} params.pageCount - Total number of pages
+ * @param {Array} params.items - All items
+ * @param {Function} params.formatItemFn - Function to format each item
+ * @param {Object} params.options - Pagination options
+ */
+function _registerPaginator({ client, messageId, getPage, pageCount, items, formatItemFn, options }) {
+    if (!client.paginators) {
+        logger.warn('Client paginators collection not initialized');
+        return;
+    }
+
+    const paginatorKey = `paginator:${messageId}`;
+    client.paginators.set(paginatorKey, {
+        getPage,
+        pageCount,
+        items,
+        formatItemFn,
+        options
+    });
+
+    // Set a timeout to clean up the paginator after a while to prevent memory leaks
+    const timeoutDuration = PAGINATOR_TIMEOUT_MINUTES * BASE.SECONDS_PER_MINUTE * BASE.MILLISECONDS_PER_SECOND;
+    setTimeout(() => {
+        if (client.paginators.has(paginatorKey)) {
+            client.paginators.delete(paginatorKey);
+            logger.debug(`Cleaned up paginator for message: ${messageId}`);
+        }
+    }, timeoutDuration);
+
+    logger.debug(`Registered paginator for message: ${messageId}`);
+}
+
+/**
+ * Creates paginated embeds for displaying arrays of data
+ * @param {Array} items - Array of items to paginate
+ * @param {Function} formatItemFn - Function that formats each item into an embed field
+ * @param {Object} options - Additional options for customization
+ * @returns {Object} Paginator object with getPage and register functions
  */
 function createPaginatedEmbed(items, formatItemFn, options = {}) {
-    const itemsPerPage = options.itemsPerPage || DEFAULT_ITEMS_PER_PAGE;
+    const itemsPerPage = options.itemsPerPage || PAGINATION.ITEMS_PER_PAGE;
     const pageCount = Math.ceil(items.length / itemsPerPage);
 
-    /**
-     * Get embed for a specific page
-     * @param {number} page - Page number (0-indexed)
-     * @returns {Object} Object with embed and components
-     */
     function getPage(page) {
-        // Ensure page is within bounds
-        const currentPage = Math.max(0, Math.min(page, pageCount - 1));
-        const startIdx = currentPage * itemsPerPage;
-        const endIdx = Math.min(startIdx + itemsPerPage, items.length);
-        const pageItems = items.slice(startIdx, endIdx);
-
-        // Create the embed
-        const embed = createEmbed({
-            title: options.title || 'Results',
-            description: options.description || `Showing ${startIdx + 1}-${endIdx} of ${items.length} items`,
-            color: options.color || COLORS.PRIMARY,
-            footerText: `${options.footerText || 'Page'} ${currentPage + 1}/${pageCount}`
+        return _createPaginationPage({
+            items,
+            formatItemFn,
+            options,
+            page,
+            itemsPerPage,
+            pageCount
         });
+    }
 
-        // Add formatted items
-        for (const item of pageItems) {
-            const formatted = formatItemFn(item);
-            if (formatted.name && formatted.value) {
-                embed.addFields({ name: formatted.name, value: formatted.value });
-            }
-        }
-
-        // Create navigation buttons
-        const buttons = _createPaginationButtons(currentPage, pageCount);
-
-        return {
-            embeds: [embed],
-            components: [createButtonRow(buttons)],
-            currentPage
-        };
+    function register(client, messageId) {
+        _registerPaginator({
+            client,
+            messageId,
+            getPage,
+            pageCount,
+            items,
+            formatItemFn,
+            options
+        });
     }
 
     return {
         getPage,
-        pageCount
+        pageCount,
+        register
     };
 }
 
@@ -433,5 +501,6 @@ module.exports = {
     createConfirmationMessage,
     createPaginatedEmbed,
     sendTimedMessage,
-    createEphemeralReplyOptions
+    createEphemeralReplyOptions,
+    PAGINATOR_TIMEOUT_MINUTES
 };

@@ -288,6 +288,66 @@ async function handleConfirmationButton(interaction) {
 }
 
 /**
+ * Extract pagination info from the message components
+ * @param {import('discord.js').Message} message - The message containing pagination components
+ * @returns {Object} Object containing currentPage and totalPages
+ */
+function extractPaginationInfo(message) {
+    const components = message.components[0]?.components || [];
+    const pageIndicator = components.find(c => {return c.data.custom_id === 'page';});
+
+    if (!pageIndicator) {
+        throw new Error('Page indicator button not found');
+    }
+
+    // Extract current and total pages from the label (format: "X/Y")
+    const [currentStr, totalStr] = pageIndicator.data.label.split('/');
+    const currentPage = parseInt(currentStr, 10) - 1; // Convert to 0-indexed
+    const totalPages = parseInt(totalStr, 10);
+
+    return { currentPage, totalPages };
+}
+
+/**
+ * Calculate the new page based on navigation button
+ * @param {string} customId - The button's custom ID
+ * @param {number} currentPage - Current page index
+ * @param {number} totalPages - Total number of pages
+ * @returns {number} The new page index
+ */
+function calculateNewPage(customId, currentPage, totalPages) {
+    switch (customId) {
+        case 'first': return 0;
+        case 'prev': return Math.max(0, currentPage - 1);
+        case 'next': return Math.min(totalPages - 1, currentPage + 1);
+        case 'last': return totalPages - 1;
+        default: return currentPage;
+    }
+}
+
+/**
+ * Handle pagination error by displaying an error message to the user
+ * @param {import('discord.js').ButtonInteraction} interaction - The button interaction
+ * @param {Error} error - The error that occurred
+ */
+async function handlePaginationError(interaction, error) {
+    logger.error('Error handling pagination button:', error);
+
+    try {
+        const errorEmbed = createErrorEmbed(
+            'Pagination Error',
+            'Failed to update the page. Please try again.'
+        );
+
+        await safeReply(interaction, createEphemeralReplyOptions({
+            embeds: [errorEmbed]
+        }));
+    } catch (replyError) {
+        logger.error('Failed to send pagination error message:', replyError.message);
+    }
+}
+
+/**
  * Handles pagination button interactions (first/prev/next/last)
  * @param {import('discord.js').ButtonInteraction} interaction
  * @returns {Promise<void>}
@@ -296,38 +356,9 @@ async function handlePaginationButton(interaction) {
     const { customId, message } = interaction;
 
     try {
-        // Get current page from the disabled "page indicator" button
-        const components = message.components[0]?.components || [];
-        const pageIndicator = components.find(c => {return c.data.custom_id === 'page';});
-
-        if (!pageIndicator) {
-            throw new Error('Page indicator button not found');
-        }
-
-        // Extract current and total pages from the label (format: "X/Y")
-        const [currentStr, totalStr] = pageIndicator.data.label.split('/');
-        const currentPage = parseInt(currentStr, 10) - 1; // Convert to 0-indexed
-        const totalPages = parseInt(totalStr, 10);
-
-        let newPage = currentPage;
-
-        // Calculate the new page based on which button was clicked
-        switch (customId) {
-            case 'first':
-                newPage = 0;
-                break;
-            case 'prev':
-                newPage = Math.max(0, currentPage - 1);
-                break;
-            case 'next':
-                newPage = Math.min(totalPages - 1, currentPage + 1);
-                break;
-            case 'last':
-                newPage = totalPages - 1;
-                break;
-            default:
-                break;
-        }
+        // Extract pagination info and calculate new page
+        const { currentPage, totalPages } = extractPaginationInfo(message);
+        const newPage = calculateNewPage(customId, currentPage, totalPages);
 
         // Don't update if we're already on the requested page
         if (newPage === currentPage) {
@@ -335,24 +366,16 @@ async function handlePaginationButton(interaction) {
             return;
         }
 
-        // Emit a custom event with the new page
-        interaction.client.emit('paginationUpdate', {
-            interaction,
-            oldPage: currentPage,
-            newPage
-        });
-
-        // Defer the update - the listener for 'paginationUpdate' should handle updating the message
-        await interaction.deferUpdate();
+        try {
+            await interaction.deferUpdate();
+            interaction.client.emit('paginationUpdate', {
+                interaction, oldPage: currentPage, newPage
+            });
+        } catch (deferError) {
+            logger.warn(`Failed to defer pagination update: ${deferError.message}`);
+        }
     } catch (error) {
-        logger.error('Error handling pagination button:', error); const errorEmbed = createErrorEmbed(
-            'Pagination Error',
-            'Failed to update the page. Please try again.'
-        );
-
-        await safeReply(interaction, createEphemeralReplyOptions({
-            embeds: [errorEmbed]
-        }));
+        await handlePaginationError(interaction, error);
     }
 }
 
