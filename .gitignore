@@ -80,4 +80,7 @@ data/
 .Trashes
 ehthumbs.db
 Thumbs.db
-/.github
+
+/.github/instructions
+/.github/prompts
+/.github/copilot-instructions.md
