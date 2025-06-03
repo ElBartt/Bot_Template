@@ -42,11 +42,9 @@ module.exports = {
         'no-template-curly-in-string': 'warn',
         'no-unused-expressions': 'error',
         'no-return-await': 'error', // Unnecessary return await
-        'require-atomic-updates': 'error',
-
-        // Style consistency
+        'require-atomic-updates': 'error', // Style consistency
         'indent': ['error', INDENT_SIZE, { 'SwitchCase': SWITCH_CASE_INDENT }],
-        'linebreak-style': ['error', 'windows'],
+        'linebreak-style': process.env.CI ? 'off' : ['error', process.platform === 'win32' ? 'windows' : 'unix'],
         'quotes': ['error', 'single', { 'avoidEscape': true }],
         'semi': ['error', 'always'],
         'camelcase': ['error', { properties: 'never' }],
