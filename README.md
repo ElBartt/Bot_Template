@@ -1,13 +1,9 @@
 # 🤖 Discord Bot Template
 
-<div align="center">
-
 ![Discord.js Version](https://img.shields.io/badge/Discord.js-v14-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success)
-
-</div>
 
 A **production-grade**, **feature-rich** Discord bot framework designed for scalability and developer joy. Built by developers who understand what makes Discord bots successful, this template provides everything you need to launch your next bot project confidently.
 
@@ -230,10 +226,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-<div align="center">
-  
-  **Made with ❤️ by Elbartt**
-  
-  ⭐ **Star this repository if you find it useful!** ⭐
-  
-</div>
+**Made with ❤️ by Elbartt**
+
+⭐ **Star this repository if you find it useful!** ⭐
