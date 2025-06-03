@@ -44,35 +44,36 @@ cd discord-bot-template
 npm install
 ```
 
-3. Create a `.env` file in the root directory:
+3. Create a `.env` file in the root directory with these configuration variables:
 
-```
-# Required Configuration
-DISCORD_TOKEN=your_bot_token_here
-DISCORD_CLIENT_ID=your_application_id_here
-ADMIN_GUILD_ID=your_development_server_id_here
+```bash
+# Required Configuration - Bot won't start without these
+DISCORD_TOKEN=your_bot_token_here          # Discord bot authentication token
+DISCORD_CLIENT_ID=your_application_id_here # Your Discord application ID
+ADMIN_GUILD_ID=your_development_server_id  # Required for development environment
 
-# Optional Configuration
-NODE_ENV=development
-LOG_LEVEL=info
+# Common Configuration
+LOG_LEVEL=debug                            # Options: error, warn, info, debug
 ```
+
+See `.env.example` for all available configuration options.
 
 4. Deploy commands to your development server:
 
 ```bash
-npm run deploy:dev
+npm run deploy:commands:dev
 ```
 
 5. Start the bot:
 
 ```bash
-npm start
+npm run start:dev
 ```
 
-For development with auto-restart:
+For production:
 
 ```bash
-npm run dev
+npm run start:prod
 ```
 
 ## 📂 Project Structure
@@ -173,10 +174,10 @@ Event-driven design for clean separation of concerns:
 
    ```bash
    # For development testing
-   npm run deploy:dev
+   npm run deploy:commands:dev
 
    # For production release
-   npm run deploy:global
+   npm run deploy:commands:prod
    ```
 
 ### Adding Event Handlers
@@ -201,8 +202,8 @@ Deploy to production servers seamlessly with PM2:
 # Install PM2 globally if needed
 npm install -g pm2
 
-# Deploy commands globally
-npm run deploy:global
+# Deploy commands to production
+npm run deploy:commands:prod
 
 # Start with production configuration
 pm2 start ecosystem.config.js --env production
