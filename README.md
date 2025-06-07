@@ -8,6 +8,8 @@
 A **production-grade**, **feature-rich** Discord bot framework designed for scalability and developer joy. Built by developers who understand what makes Discord bots successful, this template provides everything you need to launch your next bot project confidently.
 
 > ✨ **Perfect for beginners and experts alike** - Start small and scale with confidence!
+> 
+> Learn more by visiting my [detailed blog post](https://arnauld-alex.com/building-a-production-ready-discord-bot-architecture-beyond-discordjs) about the bot architecural choices
 
 ## ⚡ Features
 
